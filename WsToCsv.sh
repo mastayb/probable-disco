@@ -12,7 +12,7 @@ printoptions="-E header=y"
 
 for f in $@ 
 do
-   if [ ${f: -5} != ".pcap"]
+   if [ ${f: -5} != ".pcap" ]
    then 
       continue
    fi
