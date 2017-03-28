@@ -58,6 +58,7 @@ def ProcessData(df):
     df['60hz_divergence'] = df['delta.time'].map(Find60HzDivergence)
 
     df = df.set_index('dis.timestamp')
+    #df = df.set_index('_ws.col.absTime')
     return df
 
 def SummaryPlot(df, title):
@@ -69,6 +70,20 @@ def SummaryPlot(df, title):
     df['delta.time'].plot(); plt.ylabel('Time Delta'); plt.xlabel('Timestamp') 
     plt.subplot(313); 
     df['60hz_divergence'].plot(); plt.ylabel('60Hz Divergence'); plt.xlabel('Timestamp')
+
+def VelocitySummaryPlot(df, title):
+    plt.figure()
+    ax = plt.subplot(511)
+    df['speed_error'].plot(ax=ax); plt.ylabel('Speed Error');
+    plt.title(title)
+    for i,d in ((1,'x'),(2,'y'),(3,'z')):
+        ax = plt.subplot(511+i)
+        df[['average_velocity.'+d, 'dis.entity_linear_velocity.'+d]].plot(ax=ax, alpha=0.5, color=['r','b'])
+        plt.ylabel('Velocity')
+    ax = plt.subplot(515)
+    df[['speed','average_speed']].plot(ax=ax, alpha=0.5, color=['r','b']); plt.ylabel('Speed');
+
+
 
 def DualScatterPlot(df, x_label, y_label1, y_label2, title):
     fig, ax1 = plt.subplots()
@@ -87,12 +102,20 @@ def DualScatterPlot(df, x_label, y_label1, y_label2, title):
 def PlotData(df):
     SummaryPlot(df, 'All Data')
 
-    smallDT = df[df['delta.time'] < 0.2]
-    SummaryPlot(smallDT, 'Time Deltas < 0.2')
+    VelocitySummaryPlot(df, 'Error Summary')
 
-    DualScatterPlot(df, 'Timestamp', 'error_magnitude', '60hz_divergence', "Error Mag vs 60Hz Divergence")
+    dims = ['x','y','z']
+    positionPlotLabels = [l+d for d in dims for l in ('dis.entity_location.', 'delta.')]
+    positionPlotLabels.insert(0, 'speed_error'); positionPlotLabels.append('delta.time')
+    df[positionPlotLabels].plot(subplots=True, title='Positional Data')
 
-    fix, ax = plt.subplots()
+    #smallDT = df[df['delta.time'] < 0.2]
+    #SummaryPlot(smallDT, 'Time Deltas < 0.2')
+
+    #DualScatterPlot(df, 'Timestamp', 'error_magnitude', '60hz_divergence', "Error Mag vs 60Hz Divergence")
+    
+    plt.figure()
+    ax = plt.subplot()
     df.sort(['60hz_divergence']) \
             .plot(x='60hz_divergence', y='error_magnitude', ax=ax, title='Error Mag vs 60Hz Divergence')
     ax.set_xlim(df['60hz_divergence'].min(), df['60hz_divergence'].max())
@@ -102,7 +125,7 @@ if __name__ == "__main__":
     df = DataframeFromFile(sys.argv[1])
 
     df = ProcessData(df)
-
+    #df['speed_error'].plot(style='b.')
     PlotData(df)
     plt.show()
 
